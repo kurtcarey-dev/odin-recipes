@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wood Carving Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            min-width: 250px;
+        }
+
+        .controls h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #f4a460;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        .control-group select,
+        .control-group input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .control-group select {
+            font-size: 14px;
+        }
+
+        .tool-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(244, 164, 96, 0.3);
+            border: 2px solid #f4a460;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .tool-button:hover {
+            background: rgba(244, 164, 96, 0.5);
+            transform: translateX(5px);
+        }
+
+        .tool-button.active {
+            background: #f4a460;
+            font-weight: bold;
+        }
+
+        .info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            font-size: 12px;
+            max-width: 300px;
+        }
+
+        .info p {
+            margin: 5px 0;
+        }
+
+        .value-display {
+            display: inline-block;
+            float: right;
+            color: #f4a460;
+            font-weight: bold;
+        }
+
+        .reset-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: rgba(255, 69, 58, 0.3);
+            border: 2px solid #ff453a;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .reset-button:hover {
+            background: rgba(255, 69, 58, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="controls">
+        <h1>Wood Carving Sim</h1>
+
+        <div class="control-group">
+            <label>Wood Type</label>
+            <select id="wood-type">
+                <option value="oak">Oak - Light Brown</option>
+                <option value="walnut">Walnut - Dark Brown</option>
+                <option value="pine">Pine - Pale Yellow</option>
+                <option value="cherry">Cherry - Reddish</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Carving Tool</label>
+            <button class="tool-button active" data-tool="chisel">🔨 Chisel (Small)</button>
+            <button class="tool-button" data-tool="gouge">🛠️ Gouge (Medium)</button>
+            <button class="tool-button" data-tool="knife">🔪 Knife (Fine Detail)</button>
+        </div>
+
+        <div class="control-group">
+            <label>
+                Tool Size
+                <span class="value-display" id="size-value">5</span>
+            </label>
+            <input type="range" id="tool-size" min="1" max="15" value="5">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Carving Depth
+                <span class="value-display" id="depth-value">3</span>
+            </label>
+            <input type="range" id="carve-depth" min="1" max="10" value="3">
+        </div>
+
+        <button class="reset-button" id="reset-button">Reset Wood Block</button>
+    </div>
+
+    <div class="info">
+        <p><strong>Controls:</strong></p>
+        <p>🖱️ Left Click + Drag: Carve wood</p>
+        <p>🖱️ Right Click + Drag: Rotate view</p>
+        <p>🖱️ Scroll: Zoom in/out</p>
+        <p><strong>Tip:</strong> Try different tools for different effects!</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
