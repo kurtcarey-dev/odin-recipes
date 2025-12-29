@@ -4,25 +4,20 @@ export class WoodBlock {
     constructor(scene, woodType = 'oak') {
         this.scene = scene;
         this.woodType = woodType;
-        this.resolution = 100; // Higher = more detail but slower
+        this.resolution = 60; // Segments per dimension
         this.width = 8;
         this.height = 6;
         this.depth = 8;
 
-        // Create heightmap for carving
-        this.heightMap = [];
-        this.initHeightMap();
-
-        // Create geometry
-        this.geometry = new THREE.PlaneGeometry(
+        // Create 3D box geometry instead of flat plane
+        this.geometry = new THREE.BoxGeometry(
             this.width,
+            this.height,
             this.depth,
+            this.resolution,
             this.resolution,
             this.resolution
         );
-
-        // Rotate to make it horizontal
-        this.geometry.rotateX(-Math.PI / 2);
 
         // Create material
         this.material = this.createWoodMaterial(woodType);
@@ -37,16 +32,6 @@ export class WoodBlock {
         this.originalPositions = this.geometry.attributes.position.array.slice();
     }
 
-    initHeightMap() {
-        this.heightMap = [];
-        for (let i = 0; i <= this.resolution; i++) {
-            this.heightMap[i] = [];
-            for (let j = 0; j <= this.resolution; j++) {
-                this.heightMap[i][j] = this.height / 2;
-            }
-        }
-    }
-
     createWoodMaterial(woodType) {
         const woodColors = {
             oak: { base: 0xc19a6b, dark: 0x8b6f47, grain: 0x7a5a3a },
@@ -57,37 +42,41 @@ export class WoodBlock {
 
         const colors = woodColors[woodType] || woodColors.oak;
 
-        // Create procedural wood texture
+        // Create procedural wood texture with enhanced realism
         const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 1024;
+        canvas.width = 2048;
+        canvas.height = 2048;
         const ctx = canvas.getContext('2d');
 
-        // Base color
-        ctx.fillStyle = `#${colors.base.toString(16).padStart(6, '0')}`;
+        // Base color with slight variation
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, `#${colors.base.toString(16).padStart(6, '0')}`);
+        gradient.addColorStop(0.5, `#${colors.dark.toString(16).padStart(6, '0')}`);
+        gradient.addColorStop(1, `#${colors.base.toString(16).padStart(6, '0')}`);
+        ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Add wood grain using noise-like patterns
-        for (let i = 0; i < 50; i++) {
+        // Add vertical wood grain (like real wood grain runs)
+        for (let i = 0; i < 80; i++) {
             const x = Math.random() * canvas.width;
-            const grainWidth = 2 + Math.random() * 4;
-            const opacity = 0.1 + Math.random() * 0.3;
+            const grainWidth = 1 + Math.random() * 5;
+            const opacity = 0.15 + Math.random() * 0.4;
 
-            const gradient = ctx.createLinearGradient(x, 0, x + grainWidth, 0);
-            gradient.addColorStop(0, `rgba(${(colors.grain >> 16) & 255}, ${(colors.grain >> 8) & 255}, ${colors.grain & 255}, 0)`);
-            gradient.addColorStop(0.5, `rgba(${(colors.grain >> 16) & 255}, ${(colors.grain >> 8) & 255}, ${colors.grain & 255}, ${opacity})`);
-            gradient.addColorStop(1, `rgba(${(colors.grain >> 16) & 255}, ${(colors.grain >> 8) & 255}, ${colors.grain & 255}, 0)`);
+            const grainGradient = ctx.createLinearGradient(x, 0, x + grainWidth, 0);
+            grainGradient.addColorStop(0, `rgba(${(colors.grain >> 16) & 255}, ${(colors.grain >> 8) & 255}, ${colors.grain & 255}, 0)`);
+            grainGradient.addColorStop(0.5, `rgba(${(colors.grain >> 16) & 255}, ${(colors.grain >> 8) & 255}, ${colors.grain & 255}, ${opacity})`);
+            grainGradient.addColorStop(1, `rgba(${(colors.grain >> 16) & 255}, ${(colors.grain >> 8) & 255}, ${colors.grain & 255}, 0)`);
 
-            ctx.fillStyle = gradient;
+            ctx.fillStyle = grainGradient;
             ctx.fillRect(x, 0, grainWidth, canvas.height);
         }
 
-        // Add ring patterns (growth rings)
-        ctx.strokeStyle = `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0.15)`;
-        for (let i = 0; i < 20; i++) {
-            const x = (i / 20) * canvas.width;
-            const amplitude = 20 + Math.random() * 40;
-            const frequency = 0.01 + Math.random() * 0.02;
+        // Add growth ring patterns
+        ctx.strokeStyle = `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0.25)`;
+        for (let i = 0; i < 30; i++) {
+            const x = (i / 30) * canvas.width;
+            const amplitude = 30 + Math.random() * 60;
+            const frequency = 0.008 + Math.random() * 0.015;
 
             ctx.beginPath();
             for (let y = 0; y < canvas.height; y++) {
@@ -98,61 +87,79 @@ export class WoodBlock {
                     ctx.lineTo(x + offset, y);
                 }
             }
-            ctx.lineWidth = 1 + Math.random() * 2;
+            ctx.lineWidth = 1.5 + Math.random() * 3;
             ctx.stroke();
         }
 
-        // Add small knots
-        for (let i = 0; i < 3; i++) {
+        // Add realistic knots
+        for (let i = 0; i < 4; i++) {
             const knotX = Math.random() * canvas.width;
             const knotY = Math.random() * canvas.height;
-            const knotSize = 20 + Math.random() * 40;
+            const knotSize = 30 + Math.random() * 60;
 
             const knotGradient = ctx.createRadialGradient(knotX, knotY, 0, knotX, knotY, knotSize);
-            knotGradient.addColorStop(0, `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0.6)`);
+            knotGradient.addColorStop(0, `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0.8)`);
+            knotGradient.addColorStop(0.5, `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0.4)`);
             knotGradient.addColorStop(1, `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0)`);
 
             ctx.fillStyle = knotGradient;
-            ctx.fillRect(knotX - knotSize, knotY - knotSize, knotSize * 2, knotSize * 2);
+            ctx.beginPath();
+            ctx.arc(knotX, knotY, knotSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Add knot center
+            ctx.fillStyle = `rgba(${(colors.dark >> 16) & 255}, ${(colors.dark >> 8) & 255}, ${colors.dark & 255}, 0.9)`;
+            ctx.beginPath();
+            ctx.arc(knotX, knotY, knotSize * 0.3, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(2, 2);
+        texture.repeat.set(1, 1);
 
-        // Create normal map for grain depth
+        // Create normal map for grain depth and texture
         const normalCanvas = document.createElement('canvas');
-        normalCanvas.width = 512;
-        normalCanvas.height = 512;
+        normalCanvas.width = 1024;
+        normalCanvas.height = 1024;
         const normalCtx = normalCanvas.getContext('2d');
 
         // Base normal (pointing up)
         normalCtx.fillStyle = '#8080ff';
         normalCtx.fillRect(0, 0, normalCanvas.width, normalCanvas.height);
 
-        // Add grain normals
-        for (let i = 0; i < 30; i++) {
+        // Add pronounced grain normals
+        for (let i = 0; i < 60; i++) {
             const x = Math.random() * normalCanvas.width;
-            const grainWidth = 1 + Math.random() * 3;
+            const grainWidth = 1 + Math.random() * 4;
 
-            normalCtx.fillStyle = `rgba(128, 128, ${200 + Math.random() * 55}, ${0.3 + Math.random() * 0.4})`;
+            normalCtx.fillStyle = `rgba(128, 128, ${210 + Math.random() * 45}, ${0.4 + Math.random() * 0.5})`;
             normalCtx.fillRect(x, 0, grainWidth, normalCanvas.height);
+        }
+
+        // Add bump variation for wood texture
+        for (let i = 0; i < 100; i++) {
+            const x = Math.random() * normalCanvas.width;
+            const y = Math.random() * normalCanvas.height;
+            const size = 2 + Math.random() * 6;
+
+            normalCtx.fillStyle = `rgba(${120 + Math.random() * 16}, ${120 + Math.random() * 16}, ${240 + Math.random() * 15}, 0.2)`;
+            normalCtx.fillRect(x, y, size, size);
         }
 
         const normalMap = new THREE.CanvasTexture(normalCanvas);
         normalMap.wrapS = THREE.RepeatWrapping;
         normalMap.wrapT = THREE.RepeatWrapping;
-        normalMap.repeat.set(2, 2);
+        normalMap.repeat.set(1, 1);
 
-        // Create PBR material
+        // Create PBR material with enhanced properties
         const material = new THREE.MeshStandardMaterial({
             map: texture,
             normalMap: normalMap,
-            normalScale: new THREE.Vector2(0.3, 0.3),
-            roughness: 0.8,
+            normalScale: new THREE.Vector2(0.5, 0.5),
+            roughness: 0.85,
             metalness: 0.0,
-            side: THREE.DoubleSide,
             flatShading: false
         });
 
@@ -165,23 +172,24 @@ export class WoodBlock {
 
         // Tool multipliers for different effects
         const toolMultipliers = {
-            chisel: { size: 1.0, depth: 1.0, falloff: 0.8 },
-            gouge: { size: 1.5, depth: 0.8, falloff: 0.6 },
-            knife: { size: 0.5, depth: 1.2, falloff: 0.9 }
+            chisel: { size: 1.0, depth: 1.0, falloff: 2.0 },
+            gouge: { size: 1.5, depth: 0.7, falloff: 1.5 },
+            knife: { size: 0.5, depth: 1.2, falloff: 2.5 }
         };
 
         const tool = toolMultipliers[toolType] || toolMultipliers.chisel;
 
-        const effectiveSize = (toolSize / 10) * tool.size;
-        const effectiveDepth = (depth / 20) * tool.depth;
+        const effectiveSize = (toolSize / 8) * tool.size;
+        const effectiveDepth = (depth / 15) * tool.depth;
 
         // Update vertices near the carving point
         for (let i = 0; i < positions.count; i++) {
             vertex.fromBufferAttribute(positions, i);
 
-            // Calculate distance from carving point
+            // Calculate 3D distance from carving point
             const distance = Math.sqrt(
                 Math.pow(vertex.x - point.x, 2) +
+                Math.pow(vertex.y - point.y, 2) +
                 Math.pow(vertex.z - point.z, 2)
             );
 
@@ -190,11 +198,24 @@ export class WoodBlock {
                 const falloff = Math.pow(1 - (distance / effectiveSize), tool.falloff);
                 const carveAmount = effectiveDepth * falloff;
 
-                // Only carve downward
-                vertex.y -= carveAmount;
+                // Calculate direction from vertex to carving point (inward)
+                const direction = new THREE.Vector3(
+                    vertex.x - point.x,
+                    vertex.y - point.y,
+                    vertex.z - point.z
+                );
+                direction.normalize();
 
-                // Don't carve below a minimum height
-                vertex.y = Math.max(vertex.y, -this.height / 2);
+                // Push vertex away from carving point (remove material)
+                vertex.x += direction.x * carveAmount;
+                vertex.y += direction.y * carveAmount;
+                vertex.z += direction.z * carveAmount;
+
+                // Keep vertices within reasonable bounds
+                const maxBound = this.width / 2;
+                vertex.x = Math.max(-maxBound, Math.min(maxBound, vertex.x));
+                vertex.y = Math.max(-this.height / 2, Math.min(this.height / 2, vertex.y));
+                vertex.z = Math.max(-this.depth / 2, Math.min(this.depth / 2, vertex.z));
 
                 positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
             }
@@ -227,7 +248,6 @@ export class WoodBlock {
 
         positions.needsUpdate = true;
         this.geometry.computeVertexNormals();
-        this.initHeightMap();
     }
 
     dispose() {
